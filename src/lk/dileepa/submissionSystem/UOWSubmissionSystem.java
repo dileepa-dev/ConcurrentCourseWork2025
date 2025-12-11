@@ -5,8 +5,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class UOWSubmissionSystem {
-    private static final int STUDENT_COUNT = 10;
-    private static final int MAX_THREADS = 3;
+    private static final int STUDENT_COUNT = 10000;
+    private static final int MAX_THREADS = Runtime.getRuntime().availableProcessors() * 4;
+    // Using availableProcessors() * 4 provides a hardware-aware,
+    // scalable, and more efficient approach than a fixed thread number.
 
     public static void main(String[] args) {
         System.out.println("\n╔════════════════════════════════════════════════════════╗");
