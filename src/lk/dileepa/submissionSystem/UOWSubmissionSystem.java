@@ -1,11 +1,12 @@
 package lk.dileepa.submissionSystem;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class UOWSubmissionSystem {
-    private static final int STUDENT_COUNT = 10000;
+    private static final int STUDENT_COUNT = 1000;
     private static final int MAX_THREADS = Runtime.getRuntime().availableProcessors() * 4;
     // Using availableProcessors() * 4 provides a hardware-aware,
     // scalable, and more efficient approach than a fixed thread number.
@@ -20,6 +21,7 @@ public class UOWSubmissionSystem {
         stats.startTimer();
 
         ExecutorService executor = Executors.newFixedThreadPool(MAX_THREADS);
+        Random random = new Random();
 
         for (int i = 1; i <= STUDENT_COUNT; i++) {
             final String studentId = "IIT-"+i;
@@ -28,10 +30,17 @@ public class UOWSubmissionSystem {
                 try {
                     // Simulate processing delay (10–100 ms)
                     Thread.sleep(50);
-
-                    // Success case
-                    stats.recordSuccess();
-                    System.out.println("Student " + studentId + " submission: SUCCESS ✅");
+                    
+                    int failRandom = random.nextInt(100);
+                    if (failRandom < 5) {
+                        // fail case
+                        stats.recordFailure();
+                        System.out.println("Student " + studentId + " submission: FAILED ❌");
+                    } else {
+                        // Success case
+                        stats.recordSuccess();
+                        System.out.println("Student " + studentId + " submission: SUCCESS ✅");
+                    }
                 } catch (Exception e) {
                     stats.recordFailure();
                     System.out.println("Student " + studentId + " submission: FAILED ❌ (" + e.getMessage() + ")");
@@ -39,7 +48,7 @@ public class UOWSubmissionSystem {
             });
         }
 
-        // Gracefully shut down the executor
+        // Shut down the executor
         executor.shutdown();
         try {
             if (!executor.awaitTermination(10, TimeUnit.MINUTES)) {

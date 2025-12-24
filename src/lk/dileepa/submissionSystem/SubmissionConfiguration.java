@@ -57,4 +57,3 @@ public class SubmissionConfiguration {
         System.out.println("=".repeat(35) + "\n");
     }
 }
-
