@@ -30,7 +30,7 @@ public class UOWSubmissionSystem {
                 try {
                     // Simulate processing delay (10–100 ms)
                     Thread.sleep(50);
-                    
+
                     int failRandom = random.nextInt(100);
                     if (failRandom < 5) {
                         // fail case
