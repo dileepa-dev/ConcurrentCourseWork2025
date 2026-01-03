@@ -34,14 +34,14 @@ public class HospitalManager {
             try {
                 System.out.println("\n--- SHIFT CHANGE ---\n");
 
-                // 1️⃣ Stop old shift
+                // Stop old shift
                 shiftRunning.set(false);
                 consultantPool.shutdown();
 
-                // 2️⃣ WAIT until all consultants fully stop
+                // WAIT until all consultants fully stop
                 consultantPool.awaitTermination(5, TimeUnit.SECONDS);
 
-                // 3️⃣ Start new shift
+                // Start new shift
                 Shift next = currentShift.get().next();
                 currentShift.set(next);
                 startShift(next);

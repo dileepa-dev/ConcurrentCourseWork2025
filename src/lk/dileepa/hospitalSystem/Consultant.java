@@ -25,7 +25,6 @@ public class Consultant implements Runnable {
     public void run() {
         try {
             while (shiftRunning.get()) {
-
                 Patient patient = queue.poll(1, TimeUnit.SECONDS);
                 if (patient == null) continue;
 
