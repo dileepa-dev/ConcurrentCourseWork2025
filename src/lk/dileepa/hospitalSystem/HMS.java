@@ -7,7 +7,9 @@ public class HMS {
 
         Thread generator = new Thread(
                 new PatientGenerator(
-                        manager.getQueues()
+                        manager.getQueues(),
+                        manager.getSimulationRunning(),
+                        manager.getStatus()
                 )
         );
         generator.start();
