@@ -4,11 +4,12 @@ import lombok.Getter;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+@Getter
 public class HospitalManager {
 
-    @Getter
     private final BlockingQueue<Patient>[] queues;
     private ExecutorService consultantPool;
 
@@ -19,6 +20,10 @@ public class HospitalManager {
             new AtomicReference<>(Shift.DAY);
 
     private AtomicBoolean shiftRunning; // NEW per-shift flag
+    private static final int MAX_SHIFTS = 4;
+    private final AtomicInteger shiftCount = new AtomicInteger(0);
+    private final AtomicBoolean simulationRunning = new AtomicBoolean(true);
+    private final HospitalStatus status = new HospitalStatus();
 
     public HospitalManager() {
         queues = new BlockingQueue[3];
@@ -37,11 +42,25 @@ public class HospitalManager {
                 // Stop old shift
                 shiftRunning.set(false);
                 consultantPool.shutdown();
-
-                // WAIT until all consultants fully stop
                 consultantPool.awaitTermination(5, TimeUnit.SECONDS);
 
-                // Start new shift
+                int completedShifts = shiftCount.incrementAndGet();
+
+                if (completedShifts >= MAX_SHIFTS) {
+
+                    System.out.println("Simulation completed (2 days).");
+                    simulationRunning.set(false); // stop arrivals
+
+                    shiftRunning.set(false);      // allow consultants to exit AFTER draining
+                    consultantPool.shutdown();
+                    consultantPool.awaitTermination(10, TimeUnit.SECONDS);
+
+                    status.printSummary();
+                    shiftScheduler.shutdown();
+                    return;
+                }
+
+                // Start next shift
                 Shift next = currentShift.get().next();
                 currentShift.set(next);
                 startShift(next);
@@ -62,7 +81,8 @@ public class HospitalManager {
                             shift,
                             s,
                             queues[s.ordinal()],
-                            shiftRunning
+                            shiftRunning,
+                            status
                     )
             );
         }
