@@ -7,21 +7,29 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Controls shift scheduling, consultant lifecycle,
+ * and overall simulation management.
+ */
 @Getter
 public class HospitalManager {
 
+    // One queue per speciality
     private final BlockingQueue<Patient>[] queues;
+
     private ExecutorService consultantPool;
 
+    // Handles automatic shift rotation
     private final ScheduledExecutorService shiftScheduler =
             Executors.newSingleThreadScheduledExecutor();
 
     private final AtomicReference<Shift> currentShift =
             new AtomicReference<>(Shift.DAY);
 
-    private AtomicBoolean shiftRunning; // NEW per-shift flag
-    private static final int MAX_SHIFTS = 4;
+    private AtomicBoolean shiftRunning;
+    private static final int MAX_SHIFTS = 4; // 2 days
     private final AtomicInteger shiftCount = new AtomicInteger(0);
+
     private final AtomicBoolean simulationRunning = new AtomicBoolean(true);
     private final HospitalStatus status = new HospitalStatus();
 
@@ -35,23 +43,23 @@ public class HospitalManager {
     public void start() {
         startShift(currentShift.get());
 
+        // Rotate shifts every 12 seconds (12 hours simulated)
         shiftScheduler.scheduleAtFixedRate(() -> {
             try {
                 System.out.println("\n--- SHIFT CHANGE ---\n");
 
-                // Stop old shift
                 shiftRunning.set(false);
                 consultantPool.shutdown();
                 consultantPool.awaitTermination(5, TimeUnit.SECONDS);
 
                 int completedShifts = shiftCount.incrementAndGet();
 
+                // Stop simulation after 2 days
                 if (completedShifts >= MAX_SHIFTS) {
-
                     System.out.println("Simulation completed (2 days).");
-                    simulationRunning.set(false); // stop arrivals
+                    simulationRunning.set(false);
 
-                    shiftRunning.set(false);      // allow consultants to exit AFTER draining
+                    shiftRunning.set(false);
                     consultantPool.shutdown();
                     consultantPool.awaitTermination(10, TimeUnit.SECONDS);
 
@@ -75,6 +83,7 @@ public class HospitalManager {
         shiftRunning = new AtomicBoolean(true);
         consultantPool = Executors.newFixedThreadPool(3);
 
+        // One consultant per speciality
         for (Speciality s : Speciality.values()) {
             consultantPool.submit(
                     new Consultant(

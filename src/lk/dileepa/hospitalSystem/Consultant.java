@@ -4,6 +4,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Consultant thread that treats patients of a specific speciality
+ * during a given shift.
+ */
 public class Consultant implements Runnable {
 
     private final Shift shift;
@@ -27,16 +31,20 @@ public class Consultant implements Runnable {
     @Override
     public void run() {
         try {
+            // Continue while shift is active or patients remain in queue
             while (shiftRunning.get() || !queue.isEmpty()) {
+
+                // Poll with timeout to avoid busy waiting
                 Patient patient = queue.poll(1, TimeUnit.SECONDS);
                 if (patient == null) continue;
 
                 System.out.println(
-                        shift + " - SHIFT " + speciality +
-                                " is treating patient " + patient.getPatientId()
+                        shift + " SHIFT - " + speciality +
+                                " treating patient " + patient.getPatientId()
                 );
+
                 status.recordTreated();
-                Thread.sleep(1000);
+                Thread.sleep(1000); // Simulated treatment time
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
